@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#071114">
+    <title>JARVIS | Voice Assistant</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            font-family: "Segoe UI", sans-serif;
+            background: #071114;
+            color: #eaf8f8;
+            font-synthesis: none;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            display: grid;
+            place-items: center;
+            padding: 28px;
+            background:
+                radial-gradient(ellipse at 50% 42%, rgba(0, 185, 194, 0.13), transparent 36%),
+                linear-gradient(145deg, #071114, #0a1719 54%, #101619);
+        }
+
+        .assistant {
+            width: min(100%, 640px);
+            text-align: center;
+        }
+
+        .eyebrow {
+            margin: 0 0 14px;
+            color: #8ba5a8;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(42px, 11vw, 68px);
+            font-weight: 300;
+            letter-spacing: 8px;
+        }
+
+        #status {
+            min-height: 20px;
+            margin: 14px 0 44px;
+            color: #61e6e5;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        .talk-button {
+            width: 174px;
+            aspect-ratio: 1;
+            display: inline-grid;
+            place-items: center;
+            gap: 10px;
+            border: 1px solid rgba(87, 233, 232, 0.7);
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(37, 147, 151, 0.2), rgba(8, 25, 28, 0.88) 70%);
+            box-shadow: 0 0 0 9px rgba(77, 222, 222, 0.035), 0 0 42px rgba(0, 218, 226, 0.16), inset 0 0 28px rgba(0, 218, 226, 0.08);
+            color: #a6ffff;
+            cursor: pointer;
+            font: inherit;
+            transition: box-shadow 180ms ease, transform 180ms ease, border-color 180ms ease;
+        }
+
+        .talk-button:hover:not(:disabled) {
+            transform: scale(1.03);
+            border-color: #9affff;
+            box-shadow: 0 0 0 12px rgba(77, 222, 222, 0.05), 0 0 58px rgba(0, 218, 226, 0.28), inset 0 0 34px rgba(0, 218, 226, 0.12);
+        }
+
+        .talk-button:focus-visible {
+            outline: 2px solid #eaf8f8;
+            outline-offset: 7px;
+        }
+
+        .talk-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+
+        .mic {
+            font-size: 34px;
+            line-height: 1;
+        }
+
+        .button-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        .listening .talk-button {
+            animation: pulse 1.3s ease-in-out infinite;
+        }
+
+        #output {
+            max-width: 540px;
+            min-height: 56px;
+            margin: 38px auto 0;
+            color: #c2d2d3;
+            font-size: 17px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        @keyframes pulse {
+            50% { box-shadow: 0 0 0 15px rgba(77, 222, 222, 0.07), 0 0 62px rgba(0, 218, 226, 0.3), inset 0 0 36px rgba(0, 218, 226, 0.15); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="assistant" id="assistant">
+        <p class="eyebrow">Voice interface · Online</p>
+        <h1>JARVIS</h1>
+        <p id="status" role="status" aria-live="polite">SYSTEM READY</p>
+        <button class="talk-button" id="talkButton" type="button" aria-label="Start voice input">
+            <span class="mic" aria-hidden="true">🎙</span>
+            <span class="button-label">TALK</span>
+        </button>
+        <p id="output" aria-live="polite">Press the button and speak.</p>
+    </main>
+
+    <script>
+        const talkButton = document.getElementById("talkButton");
+        const statusText = document.getElementById("status");
+        const output = document.getElementById("output");
+        const assistant = document.getElementById("assistant");
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        function setListening(isListening) {
+            assistant.classList.toggle("listening", isListening);
+            talkButton.disabled = isListening;
+        }
+
+        function speak(text) {
+            if (!("speechSynthesis" in window)) return;
+
+            window.speechSynthesis.cancel();
+            const speech = new SpeechSynthesisUtterance(text);
+            speech.lang = "en-IN";
+            speech.rate = 1;
+            speech.pitch = 1;
+            window.speechSynthesis.speak(speech);
+        }
+
+        function jarvisReply(text) {
+            const reply = text.toLowerCase().includes("hello")
+                ? "Hello. I am JARVIS. How can I help you?"
+                : `I heard you say: ${text}`;
+
+            output.textContent = `JARVIS: ${reply}`;
+            speak(reply);
+            statusText.textContent = "SYSTEM READY";
+        }
+
+        if (!SpeechRecognition) {
+            statusText.textContent = "SPEECH RECOGNITION NOT SUPPORTED";
+            output.textContent = "Try a browser that supports speech recognition, such as Chrome.";
+            talkButton.disabled = true;
+        } else {
+            const recognition = new SpeechRecognition();
+            recognition.lang = "en-IN";
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            talkButton.addEventListener("click", () => {
+                statusText.textContent = "LISTENING...";
+                setListening(true);
+
+                try {
+                    recognition.start();
+                } catch {
+                    setListening(false);
+                    statusText.textContent = "SYSTEM READY";
+                }
+            });
+
+            recognition.onresult = (event) => {
+                const text = event.results[0][0].transcript.trim();
+                statusText.textContent = "PROCESSING...";
+                jarvisReply(text);
+            };
+
+            recognition.onerror = (event) => {
+                statusText.textContent = event.error === "not-allowed" ? "MICROPHONE ACCESS DENIED" : "MICROPHONE ERROR";
+            };
+
+            recognition.onend = () => {
+                setListening(false);
+                if (statusText.textContent === "LISTENING...") {
+                    statusText.textContent = "SYSTEM READY";
+                }
+            };
+        }
+    </script>
+</body>
+</html>
